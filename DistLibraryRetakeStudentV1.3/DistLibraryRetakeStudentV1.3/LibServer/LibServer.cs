@@ -6,6 +6,7 @@ using System.IO;
 using System.Threading;
 using LibData;
 using Microsoft.Extensions.Configuration;
+using System.Text;
 
 namespace LibServerSolution
 {
@@ -84,6 +85,9 @@ namespace LibServerSolution
         Socket serverSocket;
         IPEndPoint listeningPoint;
         Socket bookHelperSocket;
+        bool isRunning = true;
+        bool isRunning2 = true;
+        Socket SocketAgain;
 
         public SequentialServer() : base()
         {
@@ -99,7 +103,7 @@ namespace LibServerSolution
             // Extra Note: If failed to connect to helper. Server should retry 3 times.
             // After the 3d attempt the server starts anyway and listen to incoming messages to clients
            
-            // try
+            //try
             // {
                  
             // }
@@ -117,16 +121,57 @@ namespace LibServerSolution
         /// </summary>
         public override void handelListening()
         {
-            createSocketAndConnectHelpers();
+            //connect to BookHelper
+            //createSocketAndConnectHelpers();
+
             //todo: To meet the assignment requirement, finish the implementation of this method.
+            IPAddress serverIP = IPAddress.Parse(this.settings.ServerIPAddress);
+            listeningPoint = new IPEndPoint(serverIP, this.settings.ServerPortNumber);
 
+            //Listener setup
+            try
+            {
+                serverSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+                serverSocket.Bind(listeningPoint);
+                serverSocket.Listen(this.settings.ServerListeningQueue);
+            }
+            catch 
+            {
+                Console.WriteLine("Error: Could not create listener on server port");
+            }
 
-            // try
-            // {
-            // }
-            // catch (Exception e) {
+            //listener is running
+            while (isRunning)
+            {
+start:
+                SocketAgain = serverSocket.Accept();
 
-            // }
+                while (isRunning2)
+                {
+                    byte[] msg = new byte[1000];
+                    byte[] buffer = new byte[1000];
+                    
+                    int recieved_bytes = SocketAgain.Receive(buffer);
+                    string readable_data = Encoding.ASCII.GetString(buffer, 0, recieved_bytes);
+
+                    if (readable_data == "")
+                    {
+                        goto start;
+                    }
+
+                    Message message = JsonSerializer.Deserialize<Message>(readable_data);
+                    //Console.WriteLine(message.Content);
+                    
+                    Message message_to_send = processMessage(message);
+                    Console.WriteLine(message_to_send.Content);
+
+                    string message_to_send_back2 = JsonSerializer.Serialize(message_to_send);
+                    byte[] message_to_bytes = Encoding.ASCII.GetBytes(message_to_send_back2);
+                    SocketAgain.Send(message_to_bytes);
+                    break;
+                }
+                
+            }
            
         }
 
@@ -140,9 +185,16 @@ namespace LibServerSolution
             Message pmReply = new Message();
             
             //todo: To meet the assignment requirement, finish the implementation of this method .
-           
-
-
+           if (message.Type == MessageType.Hello)
+           {
+                pmReply.Type = MessageType.Welcome;
+                pmReply.Content = "";
+           }
+           else if (message.Type == MessageType.BookInquiry)
+           {
+                pmReply.Type = MessageType.BookInquiryReply;
+                pmReply.Content = "test";
+           }
 
             return pmReply;
         }

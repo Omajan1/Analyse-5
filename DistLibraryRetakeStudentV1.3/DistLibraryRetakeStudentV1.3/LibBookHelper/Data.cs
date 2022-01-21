@@ -15,6 +15,7 @@ public enum MessageType
         Welcome,
         BookInquiry,
         BookInquiryReply,
+        EndCommunication,
         Error,
         NotFound
     }

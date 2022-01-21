@@ -7,6 +7,7 @@ using System.Text.Json;
 using System.Threading;
 // using LibData;
 using Microsoft.Extensions.Configuration;
+using System.Text;
 
 namespace LibClient
 {
@@ -90,6 +91,10 @@ namespace LibClient
         public string client_id;
         private string bookName;
 
+        //extra fields
+        byte[] buffer;
+        Message msg;
+
         //This field is optional to use. 
         private int delayTime;
         /// <summary>
@@ -106,6 +111,9 @@ namespace LibClient
             this.client_id = "Client " + id.ToString();
             this.result = new Output();
             result.Client_id = this.client_id;
+
+            this.ipAddress = IPAddress.Parse(settings.ServerIPAddress);
+            this.serverEndPoint = new IPEndPoint(ipAddress, settings.ServerPortNumber);
         }
 
 
@@ -128,18 +136,36 @@ namespace LibClient
         /// </summary>
         protected override void createSocketAndConnect()
         {
-             //todo: To meet the assignment requirement, finish the implementation of this method.
+            //todo: To meet the assignment requirement, finish the implementation of this method.
   
-            // try
-            // {
-              
-            // }
-            // catch ()
-            // {
-             
-            // }
+            try
+            {
+                this.clientSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+            }
+            catch
+            {
+                Console.WriteLine("Error: Could not create socket to server!");
+            }
 
         }
+
+        public Message sendMessageAndGetResponse(Message msg)
+        {
+            string json = JsonSerializer.Serialize(msg);
+            byte[] data = Encoding.ASCII.GetBytes(json);
+            
+            //Console.WriteLine("Sending");
+            this.clientSocket.Send(data);
+            
+            //Console.WriteLine("Send");
+            int recieved = this.clientSocket.Receive(buffer);
+            
+            //Console.WriteLine("Recieved back");
+            string response = Encoding.ASCII.GetString(buffer, 0, recieved);
+            Message responseInMessageObject = JsonSerializer.Deserialize<Message>(response);
+            return responseInMessageObject;
+        }
+
 
         /// <summary>
         /// This method starts the socketserver after initializion and handles all the communications with the server. 
@@ -148,16 +174,50 @@ namespace LibClient
         /// <returns>The final result of the request that will be written to output file</returns>
         public override Output handleConntectionAndMessagesToServer()
         {
+            Message response;
+            bool Welcome_recieved = false;
+            bool Diffirent_user = !Welcome_recieved;
             this.report("starting:", this.client_id + " ; " + this.bookName);
             createSocketAndConnect();
 
+            buffer = new byte[1000];
+            msg = new Message();
+
             //todo: To meet the assignment requirement, finish the implementation of this method.
-            // try
-            // {
-               
-               
-            // }
-            // catch () {  }
+
+            //hello and welcome part of client
+            if (this.client_id == "Client 0") {
+                try
+                {
+                    msg.Type = MessageType.Hello;
+                    msg.Content = this.client_id;
+                    clientSocket.Connect(serverEndPoint); //connect to server
+                    response = sendMessageAndGetResponse(msg); //send hello to the server
+                    clientSocket.Close();
+                    if (response.Type == MessageType.Welcome)
+                    {
+                        Welcome_recieved = true;
+                    }
+                }
+                catch 
+                {
+                    Console.WriteLine("Error: Hello message could not me send, or no welcome was recieved.");
+                }
+            }
+
+            if (Welcome_recieved == true || Diffirent_user)
+            {
+                //make the bookReq message
+                createSocketAndConnect();
+                clientSocket.Connect(serverEndPoint);
+                msg.Type = MessageType.BookInquiry;
+                msg.Content = this.bookName.ToString();
+
+                //send the bookreq message
+                //Console.WriteLine(msg.Content);
+                response = sendMessageAndGetResponse(msg);
+                //Console.WriteLine(response.Content);
+            }
 
             return this.result;
         }

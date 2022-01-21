@@ -15,6 +15,7 @@ namespace LibClient
         Welcome,
         BookInquiry,
         BookInquiryReply,
+        EndCommunication,
         Error,
         NotFound
     }

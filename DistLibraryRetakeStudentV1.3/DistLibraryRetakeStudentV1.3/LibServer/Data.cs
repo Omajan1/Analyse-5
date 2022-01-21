@@ -16,6 +16,7 @@ namespace LibData
         Welcome,
         BookInquiry,
         BookInquiryReply,
+        EndCommunication,
         Error,
         NotFound
     }

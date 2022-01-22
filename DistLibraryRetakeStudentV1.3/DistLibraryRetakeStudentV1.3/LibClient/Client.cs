@@ -141,29 +141,13 @@ namespace LibClient
             try
             {
                 this.clientSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+                clientSocket.Connect(serverEndPoint);
             }
             catch
             {
-                Console.WriteLine("Error: Could not create socket to server!");
+                Console.WriteLine("Error: Could not connect to server!");
             }
 
-        }
-
-        public Message sendMessageAndGetResponse(Message msg)
-        {
-            string json = JsonSerializer.Serialize(msg);
-            byte[] data = Encoding.ASCII.GetBytes(json);
-            
-            //Console.WriteLine("Sending");
-            this.clientSocket.Send(data);
-            
-            //Console.WriteLine("Send");
-            int recieved = this.clientSocket.Receive(buffer);
-            
-            //Console.WriteLine("Recieved back");
-            string response = Encoding.ASCII.GetString(buffer, 0, recieved);
-            Message responseInMessageObject = JsonSerializer.Deserialize<Message>(response);
-            return responseInMessageObject;
         }
 
 
@@ -191,8 +175,8 @@ namespace LibClient
                 {
                     msg.Type = MessageType.Hello;
                     msg.Content = this.client_id;
-                    clientSocket.Connect(serverEndPoint); //connect to server
-                    response = sendMessageAndGetResponse(msg); //send hello to the server
+                    //clientSocket.Connect(serverEndPoint); //connect to server
+                    response = processMessage(msg); //send hello to the server
                     clientSocket.Close();
                     if (response.Type == MessageType.Welcome)
                     {
@@ -204,18 +188,19 @@ namespace LibClient
                     Console.WriteLine("Error: Hello message could not me send, or no welcome was recieved.");
                 }
             }
-
+            
+            clientSocket.Close();
             if (Welcome_recieved == true || Diffirent_user)
             {
                 //make the bookReq message
                 createSocketAndConnect();
-                clientSocket.Connect(serverEndPoint);
+                //clientSocket.Connect(serverEndPoint);
                 msg.Type = MessageType.BookInquiry;
                 msg.Content = this.bookName.ToString();
 
                 //send the bookreq message
                 //Console.WriteLine(msg.Content);
-                response = sendMessageAndGetResponse(msg);
+                response = processMessage(msg);
                 //Console.WriteLine(response.Content);
             }
 
@@ -233,11 +218,25 @@ namespace LibClient
         {
             Message processedMsgResult = new Message();
             //todo: To meet the assignment requirement, finish the implementation of this method.
-            // try
-            // {
-               
-            // }
-            // catch () {  }
+            try
+            {
+                string json = JsonSerializer.Serialize(message);
+                byte[] data = Encoding.ASCII.GetBytes(json);
+
+                //Console.WriteLine("Sending");
+                this.clientSocket.Send(data);
+
+                //Console.WriteLine("Send");
+                int recieved = this.clientSocket.Receive(buffer);
+
+                //Console.WriteLine("Recieved back");
+                string response = Encoding.ASCII.GetString(buffer, 0, recieved);
+                processedMsgResult = JsonSerializer.Deserialize<Message>(response);
+            }
+            catch 
+            {
+                Console.WriteLine("Could not send message to server.");
+            }
 
             return processedMsgResult;
         }

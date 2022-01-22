@@ -188,12 +188,12 @@ start:
            if (message.Type == MessageType.Hello)
            {
                 pmReply.Type = MessageType.Welcome;
-                pmReply.Content = "";
+                pmReply.Content = "Welcome"; //make it empty
            }
            else if (message.Type == MessageType.BookInquiry)
            {
                 pmReply.Type = MessageType.BookInquiryReply;
-                pmReply.Content = "test";
+                pmReply.Content = message.Content;
            }
 
             return pmReply;

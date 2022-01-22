@@ -3,8 +3,10 @@
     "",
     "\\DistLibraryRetakeStudentV1.3",
     "\\DistLibraryRetakeStudentV1.3\\DistLibraryRetakeStudentV1.3",
-    "\\DistLibraryRetakeStudentV1.3\\DistLibraryRetakeStudentV1.3\\LibClient"
+    "\\DistLibraryRetakeStudentV1.3\\DistLibraryRetakeStudentV1.3\\LibBookHelper",
+    "\\DistLibraryRetakeStudentV1.3\\DistLibraryRetakeStudentV1.3\\LibClient",
+    "\\DistLibraryRetakeStudentV1.3\\DistLibraryRetakeStudentV1.3\\LibServer"
   ],
-  "SelectedNode": "\\DistLibraryRetakeStudentV1.3\\DistLibraryRetakeStudentV1.3\\DistLibrary.sln",
+  "SelectedNode": "\\DistLibraryRetakeStudentV1.3\\DistLibraryRetakeStudentV1.3\\LibServer\\Data.cs",
   "PreviewInSolutionExplorer": false
 }

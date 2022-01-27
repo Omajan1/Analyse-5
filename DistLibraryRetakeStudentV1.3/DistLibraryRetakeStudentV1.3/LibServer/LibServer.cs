@@ -188,7 +188,7 @@ start:
            if (message.Type == MessageType.Hello)
            {
                 pmReply.Type = MessageType.Welcome;
-                pmReply.Content = "Welcome"; //make it empty
+                pmReply.Content = ""; //make it empty
            }
            else if (message.Type == MessageType.BookInquiry)
            {

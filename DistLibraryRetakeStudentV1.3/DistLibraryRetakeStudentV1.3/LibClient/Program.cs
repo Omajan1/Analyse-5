@@ -81,10 +81,10 @@ namespace LibClient
                     results[i].Status,
                     results[i].ReturnDate,
                     results[i].Error);
+            
             string outputContent = JsonSerializer.Serialize<Output[]>(this.results);
             // Console.WriteLine("Content of the Output file:\n {0}", outputContent);
             File.WriteAllText(outputFile, outputContent);
-
         }
     }
 }
@@ -104,6 +104,7 @@ class Program
         ClientsSimulator simulator = new ClientsSimulator();
         simulator.startSimulation();
         simulator.printOutput();
+        Console.ReadLine();
     }
 
 }

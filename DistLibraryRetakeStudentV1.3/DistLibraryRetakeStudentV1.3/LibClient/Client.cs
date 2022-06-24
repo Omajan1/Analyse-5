@@ -95,6 +95,8 @@ namespace LibClient
         byte[] buffer;
         Message msg;
 
+        bool error = false;
+
         //This field is optional to use. 
         private int delayTime;
         /// <summary>
@@ -146,6 +148,7 @@ namespace LibClient
             catch
             {
                 Console.WriteLine("Error: Could not connect to server!");
+                error = true;
             }
 
         }
@@ -169,6 +172,18 @@ namespace LibClient
 
             //todo: To meet the assignment requirement, finish the implementation of this method.
 
+            if (error)
+            {
+                result.Client_id = client_id;
+                result.BookName = null;
+                result.Status = null;
+                result.Error = "true";
+                result.BorrowerName = null;
+                result.ReturnDate = null;
+
+                return this.result;
+            }
+
             //hello and welcome part of client
             if (this.client_id == "Client 0") {
                 try
@@ -181,6 +196,17 @@ namespace LibClient
                     if (response.Type == MessageType.Welcome)
                     {
                         Welcome_recieved = true;
+                    }
+                    else
+                    {
+                        result.Client_id = client_id;
+                        result.BookName = null;
+                        result.Status = null;
+                        result.Error = "true";
+                        result.BorrowerName = null;
+                        result.ReturnDate = null;
+
+                        return this.result;
                     }
                 }
                 catch 
@@ -202,6 +228,36 @@ namespace LibClient
                 //Console.WriteLine(msg.Content);
                 response = processMessage(msg);
                 //Console.WriteLine(response.Content);
+                
+                if (response.Type == MessageType.BookInquiryReply)
+                {
+                    BookData book_data_recieved = JsonSerializer.Deserialize<BookData>(response.Content);
+                    
+                    result.Client_id = client_id;
+                    result.BookName = book_data_recieved.Title;
+                    result.Status = book_data_recieved.Status;
+                    result.Error = null;
+                    result.BorrowerName = book_data_recieved.BorrowedBy;
+                    result.ReturnDate = book_data_recieved.ReturnDate;
+                }
+                else if (response.Type == MessageType.NotFound)
+                {
+                    result.Client_id = client_id;
+                    result.BookName = response.Content;
+                    result.Status = "Not Found";
+                    result.Error = null;
+                    result.BorrowerName = null;
+                    result.ReturnDate = null;
+                }
+                else if (response.Type == MessageType.Error)
+                {
+                    result.Client_id = client_id;
+                    result.BookName = null;
+                    result.Status = null;
+                    result.Error = "true";
+                    result.BorrowerName = null;
+                    result.ReturnDate = null;
+                }
             }
 
             return this.result;
@@ -232,6 +288,8 @@ namespace LibClient
                 //Console.WriteLine("Recieved back");
                 string response = Encoding.ASCII.GetString(buffer, 0, recieved);
                 processedMsgResult = JsonSerializer.Deserialize<Message>(response);
+                //Console.WriteLine(processedMsgResult.Type);
+                //Console.ReadLine();
             }
             catch 
             {

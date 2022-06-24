@@ -89,6 +89,13 @@ namespace LibServerSolution
         bool isRunning2 = true;
         Socket SocketAgain;
 
+        IPAddress helperIP;
+        IPEndPoint helperEndPoint;
+
+        byte[] buffer;
+
+        bool error_msg = false;
+
         public SequentialServer() : base()
         {
             GetConfigurationValue();
@@ -102,15 +109,28 @@ namespace LibServerSolution
             // todo: To meet the assignment requirement, finish the implementation of this method.
             // Extra Note: If failed to connect to helper. Server should retry 3 times.
             // After the 3d attempt the server starts anyway and listen to incoming messages to clients
-           
-            //try
-            // {
-                 
-            // }
-            // catch ()
-            // {
+            this.helperIP = IPAddress.Parse(settings.BookHelperIPAddress);
+            this.helperEndPoint = new IPEndPoint(helperIP, settings.BookHelperPortNumber);
+            this.bookHelperSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
 
-            // }
+            int i = 3;
+            while (!bookHelperSocket.Connected && i > 0)
+            {
+                try
+                {
+                    bookHelperSocket.Connect(helperEndPoint);
+                }
+                catch
+                {
+                    i--;
+                    //Console.WriteLine(i);
+                }
+            }
+            if (i == 0)
+            {
+                error_msg = true;
+            }
+            
 
         }
 
@@ -122,7 +142,7 @@ namespace LibServerSolution
         public override void handelListening()
         {
             //connect to BookHelper
-            //createSocketAndConnectHelpers();
+            createSocketAndConnectHelpers();
 
             //todo: To meet the assignment requirement, finish the implementation of this method.
             IPAddress serverIP = IPAddress.Parse(this.settings.ServerIPAddress);
@@ -161,9 +181,20 @@ start:
 
                     Message message = JsonSerializer.Deserialize<Message>(readable_data);
                     //Console.WriteLine(message.Content);
+
+                    Message message_to_send = new Message();
+
+                    if (error_msg == true)
+                    {
+                        message_to_send.Type = MessageType.Error;
+                        message_to_send.Content = "Server has no access to resource";
+                    }
+                    else 
+                    {
+                        message_to_send = processMessage(message);
+                    }
                     
-                    Message message_to_send = processMessage(message);
-                    Console.WriteLine(message_to_send.Content);
+                    //Console.WriteLine(message_to_send.Content);
 
                     string message_to_send_back2 = JsonSerializer.Serialize(message_to_send);
                     byte[] message_to_bytes = Encoding.ASCII.GetBytes(message_to_send_back2);
@@ -183,17 +214,33 @@ start:
         protected override Message processMessage(Message message)
         {
             Message pmReply = new Message();
+            Message reply_message;
+
             
-            //todo: To meet the assignment requirement, finish the implementation of this method .
+           //todo: To meet the assignment requirement, finish the implementation of this method .
            if (message.Type == MessageType.Hello)
            {
                 pmReply.Type = MessageType.Welcome;
-                pmReply.Content = ""; //make it empty
+                pmReply.Content = null; //make it empty
            }
            else if (message.Type == MessageType.BookInquiry)
            {
-                pmReply.Type = MessageType.BookInquiryReply;
-                pmReply.Content = message.Content;
+                string json = JsonSerializer.Serialize(message);
+                //Console.WriteLine(json);
+                reply_message = requestDataFromHelpers(json); 
+                //Console.WriteLine("......" + reply_message);
+                
+                if (reply_message.Type == MessageType.BookInquiryReply)
+                {
+                    pmReply.Type = MessageType.BookInquiryReply;
+                    pmReply.Content = reply_message.Content;
+                }
+                else if (reply_message.Type == MessageType.NotFound)
+                {
+                    pmReply.Type = MessageType.NotFound;
+                    pmReply.Content = reply_message.Content;
+                }
+                    
            }
 
             return pmReply;
@@ -209,12 +256,27 @@ start:
             Message HelperReply = new Message();
             //todo: To meet the assignment requirement, finish the implementation of this method .
 
-            // try
-            // {
+            try
+            {
+                byte[] buffer = new byte[1000];
+                //string json = JsonSerializer.Serialize(content);
+                //Console.WriteLine("begin:" + content);
+                byte[] data = Encoding.ASCII.GetBytes(content);
 
-               
-            // }
-            // catch () { }
+                //Console.WriteLine("Sending");
+                this.bookHelperSocket.Send(data);
+                //Console.WriteLine("Send");
+
+                int recieved = bookHelperSocket.Receive(buffer); 
+                //Console.WriteLine(recieved);
+
+                //Console.WriteLine("Recieved back");
+                string response = Encoding.ASCII.GetString(buffer, 0, recieved);
+                //Console.WriteLine("helper response: " + response);
+                HelperReply = JsonSerializer.Deserialize<Message>(response);
+                //Console.WriteLine(HelperReply.Type);
+            }
+            catch { }
 
             return HelperReply;
 

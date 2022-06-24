@@ -147,12 +147,6 @@ namespace BookHelperSolution
         /// </summary>
         public override void handelListening()
         {
-            delay();
-            delay();
-            delay();
-            delay();
-            delay();
-            delay();
 
             createSocket();
             //todo: To meet the assignment requirement, finish the implementation of this method 
